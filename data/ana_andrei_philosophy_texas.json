@@ -1,0 +1,123 @@
+{
+  "keyword": "Ana Andrei Philosophy",
+  "location": "Texas",
+  "started": "2026-09-24T18:20:00+00:00",
+  "queries": [
+    "\"Ana Andrei\" philosophy Texas",
+    "Ana Andrei philosophy",
+    "\"Ana Andrei\" tiktok philosophy",
+    "\"Ana Andrei\" Texas news"
+  ],
+  "source_status": {
+    "websearch": "ok (manual import of web search results, 2026-09-24)",
+    "google_news, bing_news, gdelt, web, social": "not run for this report (hosts blocked in the build environment); run the tool locally for live coverage"
+  },
+  "notes": "Findings: the keyword resolves to Dr. Ana-Maria Andrei, Associate Professional Professor of Philosophy at Texas A&M University-Corpus Christi (Corpus Christi, Texas). Online footprint is predominantly academic (university pages, CV, PhilPeople, course and professor-rating sites). No Texas news coverage appeared in the web search results. TikTok accounts with matching names exist but none could be linked to the professor or to philosophy content; treat them as unverified name matches.",
+  "results": [
+    {
+      "title": "Ana Andrei | Philosophy",
+      "url": "https://philosophy.tamucc.edu/people/faculty/andrei",
+      "snippet": "Faculty profile, Philosophy program, Texas A&M University-Corpus Christi. Areas: Philosophy of Mind, Philosophy of Language, Metaphysics.",
+      "source": "websearch"
+    },
+    {
+      "title": "Ana-Maria Andrei ACADEMIC APPOINTMENTS (CV)",
+      "url": "https://bss-prod.tamucc.edu/hb2504/cv/Andrei_Ana.pdf",
+      "snippet": "CV: Professional Assistant Professor of Philosophy, Texas A&M University-Corpus Christi (2018-2021); Associate Professional Professor since Aug 2021. Ph.D. Philosophy, University of Florida.",
+      "source": "websearch",
+      "category": "Academic"
+    },
+    {
+      "title": "Directory | Texas A&M University-Corpus Christi - Ana Maria Andrei",
+      "url": "https://www.tamucc.edu/files/php/views/faculty-details.php?profile=Ana+Maria_Andrei",
+      "snippet": "University directory entry for philosophy faculty member Ana Maria Andrei.",
+      "source": "websearch"
+    },
+    {
+      "title": "Humanities Faculty | College of Liberal Arts | Texas A&M University-Corpus Christi",
+      "url": "https://www.tamucc.edu/liberal-arts/departments/humanities/faculty/index.php",
+      "snippet": "Humanities department faculty listing including Philosophy faculty Ana Andrei.",
+      "source": "websearch"
+    },
+    {
+      "title": "Philosophy Faculty | Humanities | Texas A&M University-Corpus Christi",
+      "url": "https://www.tamucc.edu/liberal-arts/departments/humanities/faculty/philosophy-faculty.php",
+      "snippet": "Philosophy faculty listing, TAMUCC, including Ana Andrei.",
+      "source": "websearch"
+    },
+    {
+      "title": "091721 Ana Andrei - Texas A&M University-Corpus Christi (portrait)",
+      "url": "https://photos.tamucc.edu/Portraits-Links/Faculty-Staff/091721-Ana-Andrei/i-3rMKnbw",
+      "snippet": "TAMUCC faculty/staff portrait gallery entry for Ana Andrei (philosophy).",
+      "source": "websearch"
+    },
+    {
+      "title": "PHIL 1301 - Introduction to Philosophy at Texas A&M University Corpus Christi | Coursicle",
+      "url": "https://www.coursicle.com/tamucc/courses/PHIL/1301/",
+      "snippet": "Course listing for Introduction to Philosophy at TAMUCC; instructors include Ana Andrei.",
+      "source": "websearch"
+    },
+    {
+      "title": "Ana Andrei at TAMUCC - 28 Reviews & Ratings, Spring 2026 classes | Coursicle",
+      "url": "https://www.coursicle.com/tamucc/professors/Ana+Andrei/",
+      "snippet": "Student reviews and Spring 2026 philosophy classes taught by Ana Andrei at TAMUCC (Corpus Christi, Texas).",
+      "source": "websearch"
+    },
+    {
+      "title": "Ana Andrei at Texas A&M University at Corpus Christi | Rate My Professors",
+      "url": "https://www.ratemyprofessors.com/professor/2014183",
+      "snippet": "Philosophy department professor at Texas A&M University at Corpus Christi; student ratings and reviews.",
+      "source": "websearch"
+    },
+    {
+      "title": "Ana Andrei, Texas A&M University Rate Professors",
+      "url": "https://www.professors.directory/rate/ana-andrei_texas-a-m-university",
+      "snippet": "Professor directory rating page for Ana Andrei (philosophy), Texas A&M University.",
+      "source": "websearch"
+    },
+    {
+      "title": "Ana Andrei (Texas A&M University, Corpus Christi): Events - PhilPeople",
+      "url": "https://philpeople.org/profiles/ana-andrei/events?iframe=true",
+      "snippet": "PhilPeople philosophy profile events: 2026 APA Pacific Division Meeting; International Congress of the Francophone Society for Analytic Philosophy (\"Alternate possibilities and the action-omission distinction\").",
+      "source": "websearch",
+      "category": "Academic"
+    },
+    {
+      "title": "Indivizii transmundani - o problema? (Transworld individuals) - Ana Andrei",
+      "url": "https://www.ceeol.com/search/article-detail?id=20865",
+      "snippet": "Journal article on the transworld identity problem in philosophy by Ana Andrei.",
+      "source": "websearch",
+      "category": "Academic"
+    },
+    {
+      "title": "Ana-Maria Andrei (@anamariaandrei18) | TikTok",
+      "url": "https://www.tiktok.com/@anamariaandrei18",
+      "snippet": "",
+      "source": "websearch"
+    },
+    {
+      "title": "Ana Maria Andrei (@andanam) | TikTok",
+      "url": "https://www.tiktok.com/@andanam",
+      "snippet": "",
+      "source": "websearch"
+    },
+    {
+      "title": "Ana Maria Andrei (@ana.maria_andrei) | TikTok",
+      "url": "https://www.tiktok.com/@ana.maria_andrei",
+      "snippet": "",
+      "source": "websearch"
+    },
+    {
+      "title": "Andrei Ana Maria (@andreianamaria07) | TikTok",
+      "url": "https://www.tiktok.com/@andreianamaria07",
+      "snippet": "",
+      "source": "websearch"
+    },
+    {
+      "title": "Ana Maria Andrei - TikTok Discover",
+      "url": "https://www.tiktok.com/discover/ana-maria-andrei",
+      "snippet": "",
+      "source": "websearch"
+    }
+  ]
+}
