@@ -11,8 +11,13 @@ class LocationProfile:
     query_term: str                       # appended to search queries
     terms: list[str]                      # strong signals (state name, abbreviations)
     places: list[str] = field(default_factory=list)       # cities, counties, institutions
-    domains: list[str] = field(default_factory=list)      # local outlets / institutions
+    news_domains: list[str] = field(default_factory=list)         # local news outlets
+    institution_domains: list[str] = field(default_factory=list)  # universities, government
     country_code: str = "US"
+
+    @property
+    def domains(self) -> list[str]:
+        return self.news_domains + self.institution_domains
 
     def score(self, text: str, domain: str = "") -> tuple[float, list[str]]:
         """Return (0..1 score, matched terms) for how strongly text relates to this place."""
@@ -47,13 +52,20 @@ TEXAS = LocationProfile(
         "Texas Tech", "SMU", "TCU", "UTSA", "UTEP", "Harris County",
         "Travis County", "Bexar County", "Nueces County", "Dallas County",
     ],
-    domains=[
-        "tamucc.edu", "tamu.edu", "utexas.edu", "rice.edu", "baylor.edu", "ttu.edu",
-        "smu.edu", "tcu.edu", "utsa.edu", "utep.edu", "uh.edu", "unt.edu", "txstate.edu",
-        "texastribune.org", "houstonchronicle.com", "dallasnews.com", "statesman.com",
-        "expressnews.com", "caller.com", "kiiitv.com", "kristv.com", "kztv10.com",
-        "chron.com", "star-telegram.com", "texasmonthly.com", "kxan.com", "khou.com",
-        "wfaa.com", "ksat.com", "texas.gov",
+    institution_domains=[
+        "tamucc.edu", "tamu.edu", "tamuk.edu", "utexas.edu", "rice.edu", "baylor.edu",
+        "ttu.edu", "smu.edu", "tcu.edu", "utsa.edu", "utep.edu", "uh.edu", "unt.edu",
+        "txstate.edu", "utdallas.edu", "uta.edu", "utrgv.edu", "shsu.edu", "sfasu.edu",
+        "texas.gov", "cctexas.com",
+    ],
+    news_domains=[
+        "texastribune.org", "houstonchronicle.com", "chron.com", "dallasnews.com",
+        "statesman.com", "expressnews.com", "mysanantonio.com", "caller.com", "kiiitv.com",
+        "kristv.com", "kztv10.com", "star-telegram.com", "texasmonthly.com", "kxan.com",
+        "khou.com", "wfaa.com", "ksat.com", "kut.org", "keranews.org", "houstonpublicmedia.org",
+        "tpr.org", "elpasotimes.com", "lubbockonline.com", "wacotrib.com", "myrgv.com",
+        "texasobserver.org", "dallasobserver.com", "houstonpress.com",
+        "austinchronicle.com",
     ],
 )
 

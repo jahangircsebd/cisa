@@ -13,7 +13,7 @@ from docx.shared import Pt, RGBColor
 from .engine import SearchRun
 from .models import Result
 
-CATEGORY_ORDER = ["News", "Social", "Academic", "Web"]
+CATEGORY_ORDER = ["News", "Social", "Media", "Academic", "Web"]
 
 
 def _hyperlink(paragraph, url: str, text: str) -> None:
@@ -61,6 +61,10 @@ def _result_entry(doc, i: int, r: Result) -> None:
             f"relevance {r.relevance:.2f}"]
     if r.location_hits:
         meta.append("location: " + ", ".join(r.location_hits))
+    if r.name_on_page:
+        meta.append("name confirmed on page")
+    elif r.page_status and not r.page_status.startswith("ok"):
+        meta.append("page not readable")
     m = doc.add_paragraph()
     mr = m.add_run(" | ".join(meta))
     mr.italic = True
@@ -69,6 +73,14 @@ def _result_entry(doc, i: int, r: Result) -> None:
     if r.snippet:
         s = doc.add_paragraph(r.snippet[:500])
         s.paragraph_format.left_indent = Pt(18)
+    if r.page_excerpt and r.page_excerpt[:300] != r.snippet[:300]:
+        e = doc.add_paragraph()
+        e.paragraph_format.left_indent = Pt(18)
+        lead = e.add_run("On the page: ")
+        lead.bold = True
+        lead.font.size = Pt(9)
+        body = e.add_run(r.page_excerpt[:600])
+        body.font.size = Pt(9)
     link = doc.add_paragraph()
     link.paragraph_format.left_indent = Pt(18)
     _hyperlink(link, r.url, r.url)
@@ -82,6 +94,7 @@ def build_report(run: SearchRun, path: str, analyst_notes: str | None = None) ->
     doc.add_heading("Keyword Media Search Report", 0)
     _table(doc, ["Field", "Value"], [
         ["Keyword / phrase", run.keyword],
+        ["Name variants searched", ", ".join(run.aliases) or "-"],
         ["Location focus", run.location or "None (global)"],
         ["Search run (UTC)", run.started],
         ["Report generated", datetime.now().strftime("%Y-%m-%d %H:%M")],
@@ -146,9 +159,14 @@ def build_report(run: SearchRun, path: str, analyst_notes: str | None = None) ->
     _table(doc, ["Source", "Status"], [[k, v] for k, v in sorted(run.source_status.items())])
     doc.add_paragraph()
     for line in [
-        "Each source was queried with the keyword plus the location term, and with the bare keyword.",
+        "Each source was queried with the keyword and each name variant, with and without the location term. "
+        "Academic databases (OpenAlex, Crossref, Semantic Scholar) were searched by author name.",
+        "Local sources searched only inside the location's own news outlets and institutions.",
+        "The top results' pages were opened and read in full (including PDFs). Text around name, topic and "
+        "location mentions was used for scoring; pages that were readable but never mention the name were dropped.",
         "Results were de-duplicated by normalized URL (tracking parameters removed).",
-        "Keyword score = share of keyword terms present in title/snippet/URL (+0.2 for exact phrase).",
+        "Keyword score = share of keyword terms present in title/snippet/URL/page text (+0.2 for exact phrase); "
+        "a name variant plus the topic words counts as a full match.",
         "Location score reflects mentions of the state, its cities/counties/institutions, or local outlet domains.",
         "Relevance = 0.6 × keyword score + 0.4 × location score.",
         "Social media coverage (TikTok, Instagram, Facebook, X, LinkedIn) is limited to publicly indexed "

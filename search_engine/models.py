@@ -16,6 +16,7 @@ PLATFORM_BY_DOMAIN = {
     "reddit.com": "Reddit",
     "linkedin.com": "LinkedIn",
     "threads.net": "Threads",
+    "bsky.app": "Bluesky",
 }
 SOCIAL_PLATFORMS = set(PLATFORM_BY_DOMAIN.values())
 
@@ -45,6 +46,11 @@ class Result:
     keyword_score: float = 0.0
     location_score: float = 0.0
     location_hits: list[str] = field(default_factory=list)
+    # Filled by page enrichment (enrich.py): text around keyword/location
+    # matches on the actual page, whether the name was found there, and status.
+    page_excerpt: str = ""
+    name_on_page: Optional[bool] = None
+    page_status: Optional[str] = None
 
     def __post_init__(self) -> None:
         if self.platform is None:

@@ -16,6 +16,7 @@ def _iso(entry) -> str | None:
 
 class _RSSNews(Source):
     category = "News"
+    min_interval = 0.5
     url_template = ""
 
     def feed_url(self, query: str, location) -> str:

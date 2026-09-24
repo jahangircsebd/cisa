@@ -1,4 +1,4 @@
-"""Runs all sources concurrently, then dedupes, scores, geo-tags and ranks results."""
+"""Runs all sources concurrently, then dedupes, enriches, scores, geo-tags and ranks results."""
 from __future__ import annotations
 
 import logging
@@ -11,29 +11,15 @@ from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 from .location import LocationProfile, get_profile
 from .models import Result
 from .sources import DEFAULT_SOURCES, REGISTRY
+from .subject import Subject
 
 log = logging.getLogger(__name__)
 
-STOPWORDS = {"the", "a", "an", "of", "and", "or", "in", "on", "for", "to"}
 TRACKING_PARAMS = re.compile(r"^(utm_|fbclid|gclid|ref$|ref_src|igshid|si$)")
 
 
-def keyword_tokens(keyword: str) -> list[str]:
-    return [t for t in re.findall(r"[\w&'-]+", keyword.lower()) if t not in STOPWORDS]
-
-
-def keyword_score(keyword: str, text: str) -> float:
-    """Share of keyword terms present in text, with a bonus for the exact phrase."""
-    toks = keyword_tokens(keyword)
-    if not toks:
-        return 0.0
-    low = text.lower()
-    found = sum(1 for t in toks if re.search(r"\b" + re.escape(t) + r"\b", low))
-    score = found / len(toks)
-    phrase = " ".join(toks)
-    if phrase in re.sub(r"\s+", " ", low):
-        score = min(1.0, score + 0.2)
-    return round(score, 3)
+def keyword_score(keyword: str, text: str, aliases: list[str] | None = None) -> float:
+    return Subject(keyword, aliases or []).score(text)
 
 
 def normalize_url(url: str) -> str:
@@ -48,37 +34,47 @@ class SearchRun:
     keyword: str
     location: str | None
     started: str
+    aliases: list[str] = field(default_factory=list)
     results: list[Result] = field(default_factory=list)
     source_status: dict[str, str] = field(default_factory=dict)
     queries: list[str] = field(default_factory=list)
 
+    @property
+    def subject(self) -> Subject:
+        return Subject(self.keyword, self.aliases)
+
     def to_dict(self) -> dict:
-        return {"keyword": self.keyword, "location": self.location, "started": self.started,
-                "queries": self.queries, "source_status": self.source_status,
+        return {"keyword": self.keyword, "aliases": self.aliases, "location": self.location,
+                "started": self.started, "queries": self.queries,
+                "source_status": self.source_status,
                 "results": [r.to_dict() for r in self.results]}
 
     @classmethod
     def from_dict(cls, d: dict) -> "SearchRun":
-        run = cls(keyword=d["keyword"], location=d.get("location"),
+        run = cls(keyword=d["keyword"], location=d.get("location"), aliases=d.get("aliases", []),
                   started=d.get("started") or datetime.now(timezone.utc).isoformat(timespec="seconds"),
                   source_status=d.get("source_status", {}), queries=d.get("queries", []))
         run.results = [Result.from_dict(r) for r in d.get("results", [])]
         return run
 
 
-def build_queries(keyword: str, location: LocationProfile | None) -> list[str]:
-    """Location-qualified query first, plus the bare keyword to catch items that
-    mention a city (e.g. Corpus Christi) without naming the state."""
-    if not location:
-        return [keyword]
-    return [f"{keyword} {location.query_term}", keyword]
+def build_queries(keyword: str, location: LocationProfile | None,
+                  aliases: list[str] | None = None) -> list[str]:
+    return [q for q, _ in Subject(keyword, aliases or []).queries(
+        location.query_term if location else None)]
 
 
-def score_results(results: list[Result], keyword: str,
+def result_text(r: Result) -> str:
+    return f"{r.title} {r.snippet} {r.url} {r.page_excerpt}"
+
+
+def score_results(results: list[Result], subject: Subject | str,
                   location: LocationProfile | None) -> list[Result]:
+    if isinstance(subject, str):
+        subject = Subject(subject)
     for r in results:
-        text = f"{r.title} {r.snippet} {r.url}"
-        r.keyword_score = keyword_score(keyword, text)
+        text = result_text(r)
+        r.keyword_score = subject.score(text)
         if location:
             r.location_score, r.location_hits = location.score(text, r.domain)
     return results
@@ -104,7 +100,7 @@ def dedupe(results: list[Result]) -> list[Result]:
 
 class SearchEngine:
     def __init__(self, sources: list[str] | None = None, limit_per_source: int = 30,
-                 workers: int = 8, timeout: float = 20):
+                 workers: int = 8, timeout: float = 20, fetch_pages: int = 60):
         names = sources or DEFAULT_SOURCES
         unknown = [n for n in names if n not in REGISTRY]
         if unknown:
@@ -112,13 +108,19 @@ class SearchEngine:
         self.sources = [REGISTRY[n](timeout=timeout) for n in names]
         self.limit = limit_per_source
         self.workers = workers
+        self.timeout = timeout
+        self.fetch_pages = fetch_pages
 
     def search(self, keyword: str, location: str | None = None,
-               min_keyword_score: float = 0.5, location_only: bool = False) -> SearchRun:
+               min_keyword_score: float = 0.5, location_only: bool = False,
+               aliases: list[str] | None = None, drop_unconfirmed: bool = True) -> SearchRun:
         profile = get_profile(location)
-        run = SearchRun(keyword=keyword, location=profile.name if profile else None,
+        subject = Subject(keyword, aliases or [])
+        queries = subject.queries(profile.query_term if profile else None)
+        run = SearchRun(keyword=keyword, aliases=subject.aliases,
+                        location=profile.name if profile else None,
                         started=datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                        queries=build_queries(keyword, profile))
+                        queries=[q for q, _ in queries])
         raw: list[Result] = []
         jobs = {}
         with ThreadPoolExecutor(max_workers=self.workers) as pool:
@@ -126,7 +128,12 @@ class SearchEngine:
                 if not src.available():
                     run.source_status[src.name] = f"skipped (set {src.env_key})"
                     continue
-                for q in run.queries:
+                if not src.per_query:
+                    jobs[pool.submit(src.search_subject, subject, profile, self.limit)] = src.name
+                    continue
+                for q, is_local in queries:
+                    if is_local and not src.uses_location_query:
+                        continue
                     jobs[pool.submit(src.search, q, profile, self.limit)] = src.name
             counts: dict[str, int] = {}
             for fut in as_completed(jobs):
@@ -138,20 +145,37 @@ class SearchEngine:
                     run.source_status.setdefault(name, "ok")
                 except Exception as exc:  # one broken source must not kill the run
                     log.info("source %s failed: %s", name, exc)
-                    run.source_status[name] = f"error: {type(exc).__name__}: {exc}"[:200]
+                    # keep "ok" if another query to the same source succeeded
+                    if run.source_status.get(name) != "ok":
+                        run.source_status[name] = f"error: {type(exc).__name__}: {exc}"[:200]
             for name, n in counts.items():
                 if run.source_status.get(name) == "ok":
                     run.source_status[name] = f"ok ({n} raw results)"
 
-        run.results = rank(raw, keyword, profile, min_keyword_score, location_only)
+        results = score_results(dedupe(raw), subject, profile)
+        if self.fetch_pages:
+            from .enrich import enrich_results
+            # fetch pages that are at least loosely related, best first
+            candidates = sorted((r for r in results if r.keyword_score > 0),
+                                key=lambda r: r.relevance, reverse=True)[:self.fetch_pages]
+            stats = enrich_results(candidates, subject, profile, workers=self.workers,
+                                   timeout=min(self.timeout, 15))
+            run.source_status["page_fetch"] = stats
+        run.results = rank(results, subject, profile, min_keyword_score, location_only,
+                           drop_unconfirmed)
         return run
 
 
-def rank(results: list[Result], keyword: str, profile: LocationProfile | None,
-         min_keyword_score: float = 0.5, location_only: bool = False) -> list[Result]:
-    results = score_results(dedupe(results), keyword, profile)
+def rank(results: list[Result], subject: Subject | str, profile: LocationProfile | None,
+         min_keyword_score: float = 0.5, location_only: bool = False,
+         drop_unconfirmed: bool = True) -> list[Result]:
+    results = score_results(dedupe(results), subject, profile)
     results = [r for r in results if r.keyword_score >= min_keyword_score]
+    if drop_unconfirmed:
+        # A page we read in full that never mentions the name is a false match.
+        results = [r for r in results if r.name_on_page is not False]
     if location_only and profile:
         results = [r for r in results if r.location_score > 0]
-    results.sort(key=lambda r: (r.relevance, r.published or ""), reverse=True)
+    results.sort(key=lambda r: (r.relevance, r.name_on_page is True, r.published or ""),
+                 reverse=True)
     return results

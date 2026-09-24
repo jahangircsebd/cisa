@@ -91,7 +91,7 @@ class _Broken(Source):
 def test_engine_survives_broken_source(monkeypatch):
     monkeypatch.setitem(REGISTRY, "fake", _Fake)
     monkeypatch.setitem(REGISTRY, "broken", _Broken)
-    run = SearchEngine(sources=["fake", "broken"]).search(KW, "Texas")
+    run = SearchEngine(sources=["fake", "broken"], fetch_pages=0).search(KW, "Texas")
     assert len(run.results) == 1  # two queries, deduped
     assert run.source_status["fake"].startswith("ok")
     assert run.source_status["broken"].startswith("error")
@@ -100,7 +100,7 @@ def test_engine_survives_broken_source(monkeypatch):
 
 def test_keyed_sources_skip_without_key(monkeypatch):
     monkeypatch.delenv("SERPAPI_KEY", raising=False)
-    run = SearchEngine(sources=["serpapi"]).search(KW, "Texas")
+    run = SearchEngine(sources=["serpapi"], fetch_pages=0).search(KW, "Texas")
     assert "skipped" in run.source_status["serpapi"]
 
 
